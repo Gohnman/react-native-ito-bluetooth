@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Build;
+import android.provider.Settings;
 import android.util.Log;
 
 import androidx.core.content.ContextCompat;
@@ -16,9 +17,10 @@ public class Preconditions {
     private static final String LOG_TAG = "Preconditions";
 
     public static boolean isLocationServiceEnabled(Context context) {
-        LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-        assert locationManager != null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+            assert locationManager != null;
+
             //I have read this is not actually required on all devices, but I have not found a way
             //to check if it is required.
             //If location is not enabled the BLE scan fails silently (scan callback is never called)
@@ -27,9 +29,8 @@ public class Preconditions {
                 return false;
             }
         } else {
-            //Not sure if this is the correct check, gps is not really required, but passive provider
-            //does not seem to be enough
-            if (!locationManager.getProviders(true).contains(LocationManager.GPS_PROVIDER)) {
+            int locationMode = Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.LOCATION_MODE, Settings.Secure.LOCATION_MODE_OFF);
+            if (locationMode == Settings.Secure.LOCATION_MODE_OFF) {
                 Log.i(LOG_TAG, "Location not enabled (API<P check)");
                 return false;
             }
